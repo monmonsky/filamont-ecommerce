@@ -15,8 +15,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->foreignId('attribute_value_id')->constrained()->onDelete('cascade');
+            $table->string('name');
+            $table->string('sku')->unique();
+            $table->decimal('price', 8, 2);
             $table->integer('stock')->default(0);
             $table->string('image_path')->nullable();
+            $table->boolean('is_enabled')->default(false);
             $table->timestamps();
         });
     }

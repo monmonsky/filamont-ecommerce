@@ -31,9 +31,14 @@ class DatabaseSeeder extends Seeder
         $product = Product::create([
             'name' => 'Kaos Polos',
             'slug' => 'kaos-polos',
+            'sku' => 'kp111',
+            'stock' => 100,
             'description' => 'Kaos polos dengan bahan katun',
             'price' => 100000,
-            'category_id' => 1, // ID kategori "Pakaian"
+            'category_id' => 1,
+            'is_new' => false,
+            'is_featured' => false,
+            'is_enabled' => true,
         ]);
 
         // Buat atribut "Size" dan "Color"
@@ -48,8 +53,12 @@ class DatabaseSeeder extends Seeder
         $variant = ProductVariant::create([
             'product_id' => $product->id,
             'attribute_value_id' => $sizeM->id, // Menggunakan ID nilai atribut "M"
+            'name' => 'Variant Default',
+            'price' => 100000,
+            'sku' => 'KS-KPDHBK-1',
             'stock' => 50,
             'image_path' => 'images/kaos-polos-merah.jpg',
+            'is_enabled' => true,
         ]);
     }
 }
