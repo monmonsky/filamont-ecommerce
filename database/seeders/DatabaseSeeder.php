@@ -2,29 +2,25 @@
 
 namespace Database\Seeders;
 
-use App\Models\Attribute;
-use App\Models\AttributeValue;
+use Illuminate\Database\Seeder;
+use App\Models\User;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Attribute;
+use App\Models\AttributeValue;
 use App\Models\ProductVariant;
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Buat admin
         User::factory()->create([
             'name' => 'Admin',
             'email' => 'admin@example.com',
         ]);
 
+        // Buat kategori
         $category = Category::create(['name' => 'Pakaian']);
 
         // Buat produk
@@ -35,30 +31,49 @@ class DatabaseSeeder extends Seeder
             'stock' => 100,
             'description' => 'Kaos polos dengan bahan katun',
             'price' => 100000,
-            'category_id' => 1,
+            'category_id' => $category->id, // Gunakan ID kategori secara dinamis
             'is_new' => false,
             'is_featured' => false,
             'is_enabled' => true,
         ]);
 
-        // Buat atribut "Size" dan "Color"
+        // Buat atribut "Size" dan nilai-nilainya
         $sizeAttribute = Attribute::create(['name' => 'Size']);
-        $colorAttribute = Attribute::create(['name' => 'Color']);
-
-        // Buat nilai atribut
         $sizeM = AttributeValue::create(['attribute_id' => $sizeAttribute->id, 'value' => 'M']);
-        $colorRed = AttributeValue::create(['attribute_id' => $colorAttribute->id, 'value' => 'Merah']);
+        $sizeL = AttributeValue::create(['attribute_id' => $sizeAttribute->id, 'value' => 'L']);
 
-        // Buat variant produk
-        $variant = ProductVariant::create([
-            'product_id' => $product->id,
-            'attribute_value_id' => $sizeM->id, // Menggunakan ID nilai atribut "M"
-            'name' => 'Variant Default',
-            'price' => 100000,
-            'sku' => 'KS-KPDHBK-1',
-            'stock' => 50,
-            'image_path' => 'images/kaos-polos-merah.jpg',
-            'is_enabled' => true,
-        ]);
+        // Buat atribut "Color" dan nilainya
+        $colorAttribute = Attribute::create(['name' => 'Color']);
+        $colorRed = AttributeValue::create(['attribute_id' => $colorAttribute->id, 'value' => 'Merah']);
+        $colorBlue = AttributeValue::create(['attribute_id' => $colorAttribute->id, 'value' => 'Biru']);
+
+        // Kombinasi untuk varian produk
+        $combinations = [
+            [$sizeM, $colorRed],  // Kombinasi: Size M + Color Red
+            [$sizeL, $colorBlue], // Kombinasi: Size L + Color Blue
+        ];
+
+        // Buat varian untuk setiap kombinasi atribut
+        foreach ($combinations as $index => $attributes) {
+            // Buat nama varian dari kombinasi atribut
+            $variantName = "Kaos Polos Size {$attributes[0]->value}, Color {$attributes[1]->value}";
+
+            // Tambahkan varian ke database
+            $variant = ProductVariant::create([
+                'product_id' => $product->id,
+                'name' => $variantName,
+                'price' => 100000 + ($index * 10000), // Tambahkan 10.000 ke harga untuk setiap varian
+                'sku' => 'KP-' . strtoupper($attributes[0]->value) . '-' . strtoupper($attributes[1]->value),
+                'stock' => 50,
+                'image_path' => "images/kaos-polos-{$attributes[1]->value}.jpg", // Gambar sesuai warna
+                'is_enabled' => true,
+            ]);
+
+            // Hubungkan atribut ke varian melalui pivot table
+            $variant->attributeValues()->attach([
+                $attributes[0]->id, // Size
+                $attributes[1]->id, // Color
+            ]);
+        }
     }
 }

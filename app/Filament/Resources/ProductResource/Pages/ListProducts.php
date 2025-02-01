@@ -11,6 +11,10 @@ use Filament\Actions;
 use Filament\Forms\Set;
 use Filament\Resources\Pages\ListRecords;
 use App\Helpers\SkuGenerator;
+use App\Models\Category;
+use Closure;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Get;
 
 class ListProducts extends ListRecords
 {
@@ -25,6 +29,7 @@ class ListProducts extends ListRecords
             ->createAnother(false)
             ->modal()
             ->modalHeading('Create New Product')
+            ->modalWidth('sm')
             ->form([
                 \Filament\Forms\Components\Select::make('category_id')
                     ->relationship(name: 'category', titleAttribute: 'name')
@@ -32,22 +37,31 @@ class ListProducts extends ListRecords
                     ->preload()
                     ->required()
                     ->createOptionForm([
-                \Filament\Forms\Components\TextInput::make('name')
+                        \Filament\Forms\Components\TextInput::make('name')
                             ->required(),
                     ]),
                 \Filament\Forms\Components\TextInput::make('name')
-                    ->afterStateUpdated(function (Set $set, $state) {
+                    ->afterStateUpdated(function (Set $set, Get $get, $state) {
+                        // Generate slug berdasarkan nama produk
                         $set('slug', Product::generateUniqueSlug($state));
+
+                        // Ambil nama kategori dari field 'category_id'
+                        $categoryId = $get('category_id');
+                        $categoryName = Category::find($categoryId)?->name ?? ''; // Lakukan query kategori
+
+                        // Generate SKU berdasarkan kategori dan nama produk
+                        $set('sku', Product::generateSKU($categoryName, $state));
                     })
                     ->live(onBlur: true)
                     ->required(),
-                \Filament\Forms\Components\TextInput::make('slug')
+                TextInput::make('sku')
+                    ->label('SKU')
                     ->required()
                     ->readOnly()
-                    ->unique(table: Product::class, column: 'slug', ignoreRecord: true),
-                \Filament\Forms\Components\TextInput::make('sku')
-                    ->required()
                     ->unique(table: Product::class, column: 'sku', ignoreRecord: true),
+                \Filament\Forms\Components\Hidden::make('slug')
+                    ->required()
+                    ->unique(table: Product::class, column: 'slug', ignoreRecord: true),
                 \Filament\Forms\Components\TextInput::make('price')
                     ->required()
                     ->numeric()
@@ -68,7 +82,7 @@ class ListProducts extends ListRecords
                     'product_id' => $product->id,
                     'attribute_value_id' => $attributeValue->id,
                     'name' => "Variant Default",
-                    'sku' => SkuGenerator::generate($product->category, $product->name).'-1',
+                    'sku' => $product->sku.'-'.$attribute->name.'-'.$attributeValue->value.'-'.rand(0,99),
                     'price' => $product->price,
                     'stock' => 0,
                     'is_enabled' => true, 

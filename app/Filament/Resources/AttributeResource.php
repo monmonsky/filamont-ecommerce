@@ -3,7 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\AttributeResource\Pages;
-use App\Filament\Resources\AttributeValuesResource\RelationManagers\AttributeValueRelationManager;
+use App\Filament\Resources\AttributeResource\RelationManagers\AttributeValuesRelationManager;
 use App\Models\Attribute;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -13,8 +13,6 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class AttributeResource extends Resource
 {
@@ -40,18 +38,27 @@ class AttributeResource extends Resource
     {
         return $table
             ->columns([
+                // Menampilkan kolom nama atribut
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Attribute Name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('value')
-                    ->getStateUsing(fn ($record) => $record->AttributeValue->pluck('value')->join(', '))
+
+                // Menampilkan nilai atribut dari relasi `attributeValues`
+                Tables\Columns\TextColumn::make('values')
+                    ->label('Attribute Values')
+                    ->getStateUsing(fn ($record) => $record->attributeValues->pluck('value')->join(', ')) // Mengambil nilai atribut menggunakan relasi attributeValues
                     ->badge()
                     ->color('warning')
                     ->searchable(),
+                
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created At')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Updated At')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -60,8 +67,9 @@ class AttributeResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -76,13 +84,15 @@ class AttributeResource extends Resource
             ->schema([
                 Section::make('Attribute')
                     ->schema([
-                        TextEntry::make('name')->label('Attribute Name'),
+                        TextEntry::make('name')
+                            ->label('Attribute Name'),
                     ])->columns(1),
+                
                 Section::make('Values')
                     ->schema([
-                        TextEntry::make('value')
-                        ->label('Attribute Value')
-                        ->getStateUsing(fn ($record) => $record->AttributeValue->pluck('value')->join(' , ')),
+                        TextEntry::make('values')
+                            ->label('Attribute Values')
+                            ->getStateUsing(fn ($record) => $record->attributeValues->pluck('value')->join(', ')),
                     ])->columns(1),
             ]);
     }
@@ -90,7 +100,7 @@ class AttributeResource extends Resource
     public static function getRelations(): array
     {
         return [
-            AttributeValueRelationManager::class
+            AttributeValuesRelationManager::class, // Gunakan relasi ke AttributeValues
         ];
     }
 

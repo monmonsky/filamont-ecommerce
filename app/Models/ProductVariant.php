@@ -9,15 +9,30 @@ class ProductVariant extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['product_id', 'attribute_value_id', 'stock', 'name', 'sku', 'price', 'image_path'];
+    protected $fillable = [
+        'product_id', 
+        'name',
+        'sku',
+        'price',
+        'stock',
+        'image_path',
+        'is_enabled',
+    ];
 
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
 
-    public function attributeValue()
+    public function attributeValues()
     {
-        return $this->belongsTo(AttributeValue::class);
+        return $this->belongsToMany(AttributeValue::class, 'product_variant_attribute_value')
+            ->using(ProductVariantAttributeValue::class)
+            ->withTimestamps();
+    }
+
+    public function productVariantAttributeValues()
+    {
+        return $this->hasMany(ProductVariantAttributeValue::class, 'product_variant_id'); // Sesuaikan kolom foreign key
     }
 }
